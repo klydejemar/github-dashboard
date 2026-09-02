@@ -16,11 +16,11 @@ function App() {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    const profileRes = await fetch(`https://api.github.com/users/${username}`)
+    const profileRes = await fetch(`/api/github?path=users/${username}`)
     const profileData = await profileRes.json()
     setProfile(profileData)
 
-    const reposRes = await fetch(`https://api.github.com/users/${username}/repos`)
+    const reposRes = await fetch(`/api/github?path=users/${username}/repos`)
     const reposData = await reposRes.json()
     setRepos(Array.isArray(reposData) ? reposData : [])
   }
