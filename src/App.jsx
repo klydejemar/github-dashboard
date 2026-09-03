@@ -5,6 +5,7 @@ function App() {
   const [username, setUsername] = useState('')
   const [profile, setProfile] = useState(null)
   const [repos, setRepos] = useState([])
+  const [error, setError] = useState(null)
   const languageCounts = repos.reduce((acc, repo) => {
     if (!repo.language) return acc
     acc[repo.language] = (acc[repo.language] || 0) + 1
@@ -15,9 +16,26 @@ function App() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setError(null)
+    setProfile(null)
+    setRepos([])
 
     const profileRes = await fetch(`/api/github?path=users/${username}`)
     const profileData = await profileRes.json()
+
+    if (profileRes.status === 404) {
+      setError('User not found.')
+      return
+    }
+    if (profileRes.status === 403) {
+      setError('Rate limit hit — try again in a bit.')
+      return
+    }
+    if (!profileRes.ok) {
+      setError('Something went wrong. Try again.')
+      return
+    }
+
     setProfile(profileData)
 
     const reposRes = await fetch(`/api/github?path=users/${username}/repos`)
@@ -26,8 +44,8 @@ function App() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
-      <form onSubmit={handleSubmit} className="flex gap-2">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -38,7 +56,7 @@ function App() {
       </form>
 
       {profile && !profile.message && (
-        <div className="mt-6 flex items-center gap-4">
+        <div className="mt-6 flex flex-wrap items-center gap-4">
           <img src={profile.avatar_url} alt={profile.login} className="h-16 w-16 rounded-full" />
           <div>
             <p className="font-semibold">{profile.name || profile.login}</p>
@@ -48,8 +66,8 @@ function App() {
         </div>
       )}
 
-      {profile?.message && (
-        <p className="mt-6 text-red-600">User not found.</p>
+      {error && (
+        <p className="mt-6 text-red-600">{error}</p>
       )}
       
       {languageData.length > 0 && (
